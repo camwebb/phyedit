@@ -58,6 +58,13 @@ function actions(   n, a, i) {
         "<input type=\"hidden\" name=\"node\" value=\"" f["node"]  "\"/>"\
         "<input type=\"submit\" value=\"Add\"/> a new <b>daughter node</b>: "\
         "<input type=\"text\" name=\"new\" size=\"30\"/> </p></form>"
+    if (a[i] == "spin")
+      print "<form action=\"do\"><p style=\"padding: 25px;\">"\
+        "<input type=\"hidden\" name=\"file\" value=\"" f["file"] "\"/>" \
+        "<input type=\"hidden\" name=\"action\" value=\"spin\"/>"\
+        "<input type=\"hidden\" name=\"node\" value=\"" f["node"]  "\"/>" \
+        "<input type=\"submit\" value=\"Spin\"/> daughters at this node"\
+        "</p></form>"
   }
   footer()
 }  
