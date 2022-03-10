@@ -188,7 +188,7 @@ function edit_label(old, new,  i) {
   
 function make_jpg() {
   
-  print "graph phy {\n  rankdir = \"LR\" ;\n  size=\"10,10\";" > \
+  print "graph phy {\n  rankdir = \"LR\" ;\n  size=\"8,8\";" > \
     (DIR "/" FILEBASE ".dot")
   
   print "  \"" Root "\" [style=filled,URL=\"" APPNAME   \

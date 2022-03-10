@@ -118,7 +118,8 @@ function defaultpage(   i) {
   print "<img src=\"tmp/" f["file"] ".jpg?" systime() "\" usemap=\"#phy\"/>"
   print "</td><td style=\"vertical-align: top;\">"
   if (Message)
-    print Message
+    print Message "<br/><br/>"
+  print "[ <a href=\"do\">Choose another file</a> ]"
   print "</td></tr></table>"
 
   footer()
