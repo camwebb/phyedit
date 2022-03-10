@@ -1,0 +1,16 @@
+Options +ExecCGI -Indexes
+
+<Files "do">
+  SetHandler cgi-script
+</Files>
+
+DirectoryIndex do
+
+<FilesMatch "^\.pw$">
+  Deny from all
+</FilesMatch>
+
+#Session On
+#SessionEnv On
+#SessionCookieName session path=/
+#SessionHeader X-Replace-Session
