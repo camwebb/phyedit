@@ -10,6 +10,15 @@ DirectoryIndex do
   Deny from all
 </FilesMatch>
 
+<FilesMatch "^\.htaccess$">
+  Deny from all
+</FilesMatch>
+
+# AuthType Basic
+# AuthName "Password Protected"
+# AuthUserFile /home/cam/public_html/akflora/alaskaflora.org/chars/.pw
+# Require valid-user
+
 #Session On
 #SessionEnv On
 #SessionCookieName session path=/
