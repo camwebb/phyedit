@@ -10,9 +10,10 @@ BEGIN{
   }
   
   # DETERMINE AND EXECUTE METHOD
-  if (f["actions"])
+  if (!f["file"])
+    choose_file()
+  else if (f["actions"])
     actions()
-  
   else defaultpage()
   
 }
@@ -27,36 +28,44 @@ function actions(   n, a, i) {
   print "<p>Select an action on node <b>" f["node"] "</b>:</p>"
   for (i = 1; i <= n; i++) {
     if (a[i] == "edit")
-      print "<form action=\"do\"><p style=\"padding: 25px;\"><input type=\"hidden\" "            \
-        "name=\"action\" value=\"edit\"/><input type=\"hidden\" "       \
-        "name=\"node\" value=\"" f["node"]  "\"/><input type=\"submit\" " \
-        "value=\"Change\"/> node name to: " \
-        "<input "                                        \
-        "type=\"text\" name=\"new\" size=\"30\"/> </p></form>"
+      print "<form action=\"do\"><p style=\"padding: 25px;\">"          \
+        "<input type=\"hidden\" name=\"file\" value=\"" f["file"] "\"/>" \
+        "<input type=\"hidden\" name=\"action\" value=\"edit\"/>"       \
+        "<input type=\"hidden\" name=\"node\" value=\"" f["node"]  "\"/>" \
+        "<input type=\"submit\" value=\"Change\"/> node name to: "      \
+        "<input type=\"text\" name=\"new\" size=\"30\"/>"               \
+        "</p></form>"
     if (a[i] == "rm")
-      print "<form action=\"do\"><p style=\"padding: 25px;\"><input type=\"hidden\" "           \
-        "name=\"action\" value=\"rm\"/><input type=\"hidden\" "         \
-        "name=\"node\" value=\"" f["node"]  "\"/><input type=\"submit\" " \
-        "value=\"Delete\"/> node</p></form>"
+      print "<form action=\"do\"><p style=\"padding: 25px;\">"          \
+        "<input type=\"hidden\" name=\"file\" value=\"" f["file"] "\"/>" \
+        "<input type=\"hidden\" name=\"action\" value=\"rm\"/>"\
+        "<input type=\"hidden\" name=\"node\" value=\"" f["node"]  "\"/>"\
+        "<input type=\"submit\" value=\"Delete\"/> node"\
+        "</p></form>"
     if (a[i] == "insert")
-      print "<form action=\"do\"><p style=\"padding: 25px;\"><input type=\"hidden\" "            \
-        "name=\"action\" value=\"insert\"/><input type=\"hidden\" "     \
-        "name=\"node\" value=\"" f["node"]  "\"/><input type=\"submit\" " \
-        "value=\"Insert\"/> an <b>intermediate node</b> rootward: <input " \
-        "type=\"text\" name=\"new\" size=\"30\"/> </p></form>"
+      print "<form action=\"do\"><p style=\"padding: 25px;\">"\
+        "<input type=\"hidden\" name=\"file\" value=\"" f["file"] "\"/>" \
+        "<input type=\"hidden\" name=\"action\" value=\"insert\"/>"\
+        "<input type=\"hidden\" name=\"node\" value=\"" f["node"]  "\"/>"\
+        "<input type=\"submit\" value=\"Insert\"/> "\
+        "an <b>intermediate node</b> rootward: "                   \
+        "<input type=\"text\" name=\"new\" size=\"30\"/>"\
+        "</p></form>"
     if (a[i] == "add")
-      print "<form action=\"do\"><p style=\"padding: 25px;\"><input type=\"hidden\" "            \
-        "name=\"action\" value=\"add\"/><input type=\"hidden\" "     \
-        "name=\"node\" value=\"" f["node"]  "\"/><input type=\"submit\" " \
-        "value=\"Add\"/> a new <b>daughter node</b>: <input " \
-        "type=\"text\" name=\"new\" size=\"30\"/> </p></form>"
+      print "<form action=\"do\"><p style=\"padding: 25px;\">"\
+        "<input type=\"hidden\" name=\"file\" value=\"" f["file"] "\"/>" \
+        "<input type=\"hidden\" name=\"action\" value=\"add\"/>"\
+        "<input type=\"hidden\" name=\"node\" value=\"" f["node"]  "\"/>"\
+        "<input type=\"submit\" value=\"Add\"/> a new <b>daughter node</b>: "\
+        "<input type=\"text\" name=\"new\" size=\"30\"/> </p></form>"
   }
   footer()
 }  
 
 function action(   error, cmd) {
 
-  cmd = "./phyedit " f["action"] " " f["node"] " " f["new"]
+  cmd = "PHYEDIT_DIR=tmp PHYEDIT_FILEBASE=" f["file"]       \
+    " ./phyedit " f["action"] " " f["node"] " " f["new"]
   if (system(cmd)) {
     getline error < "tmp/error"
     Message = "Error: " error
@@ -100,14 +109,13 @@ function footer() {
 function defaultpage(   i) {
 
   # run action first
-  # if (f["action"])
-  action(f["action"])
+  action()
   
   header()
-  system("cat tmp/phy.map")
+  system("cat tmp/" f["file"] ".map")
 
   print "<table><tr><td style=\"width: 820px;\">"
-  print "<img src=\"tmp/phy.jpg?" systime() "\" usemap=\"#phy\"/>"
+  print "<img src=\"tmp/" f["file"] ".jpg?" systime() "\" usemap=\"#phy\"/>"
   print "</td><td style=\"vertical-align: top;\">"
   if (Message)
     print Message
@@ -164,4 +172,25 @@ function urldecode(text,   hex, i, hextab, decoded, len, c, c1, c2, code) {
   # remove last linebreak
   gsub(/[\n\r]*$/,"",decoded);
   return decoded
+}
+
+function choose_file(   cmd, file) {
+
+  header()
+
+  cmd = "find tmp -name '*.fy' | sed -e 's|tmp/||g' -e 's/.fy//g'"
+  while ((cmd | getline)>0)
+    file[$0]++
+  
+  print "<form action=\"do\"><p>"
+  print "Choose a file to work on: "
+  print "<select name=\"file\" autocomplete=\"off\">"
+  print "<option value=\"NULL\" selected=\"selected\"></option>"
+  for (i in file)
+    print "<option value=\"" i "\">" i "</option>"
+  print "</select><br/><br/>"
+  print "<input type=\"submit\" value=\"Use\"/>"
+  print "</p></form>"
+
+  footer()
 }

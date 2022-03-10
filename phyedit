@@ -3,7 +3,6 @@
 BEGIN{
   
   APPNAME ="do"
-  DIR = "tmp" # or .
   
   load()
 
@@ -47,15 +46,28 @@ function load(   i) {
   FS=OFS="|"
   PROCINFO["sorted_in"] = "@ind_str_asc"
 
+  if(ENVIRON["PHYEDIT_FILEBASE"])
+    FILEBASE = ENVIRON["PHYEDIT_FILEBASE"]
+  else
+    FILEBASE = "phy"
+
+  if(ENVIRON["PHYEDIT_DIR"])
+    DIR = ENVIRON["PHYEDIT_DIR"]
+  else
+    DIR = "."
+  
+  if (system("test -f " DIR "/" FILEBASE ".fy" ))
+    error("'" DIR "/" FILEBASE ".fy' is not a file")
+  
   # read tree
-  while ((getline < (DIR "/phy")) > 0) {
+  while ((getline < (DIR "/" FILEBASE ".fy")) > 0) {
     if (U[$1])
       error("Input tree error: duplicate '" $1 "' in column 1")
     
     U[$1] = $2
     Nd[$2]++
   }
-  close(DIR "/phy")
+  close(DIR "/" FILEBASE ".fy")
 
   # find root
   for (i in Nd)
@@ -79,12 +91,12 @@ function load(   i) {
   # for (i in U)
   #   if (Tip[i])
   #     print "  " i
-  
-  system("rm error >& /dev/null")
+
+  system("rm " DIR "/error >& /dev/null")
 }
 
 function test_args() {
-
+  
   # test for unitary arguments
   for (i = 2; i < ARGC; i++)
     if (split(ARGV[i], tmp, " ") > 1)
@@ -125,7 +137,6 @@ function rm_node(node    , i) {
   if ((node == Root) || \
       ((U[node] == Root) && (Nd[Root] == 1)))
     error("Cannot delete root node")
-
   
   # deleting a single-daughter node
   else if (Nd[node] == 1) {
@@ -154,6 +165,12 @@ function edit_label(old, new,  i) {
 
   test_node_is_in(old)
   test_node_is_out(new)
+
+  # adjust tip status
+  if (Tip[old]) {
+    Tip[new]=1
+    delete Tip[old]
+  }
   
   # fix label as parent
   for (i in U) {
@@ -171,40 +188,43 @@ function edit_label(old, new,  i) {
   
 function make_jpg() {
   
-  print "graph phy {\n  rankdir = \"LR\" ;\n  size=\"10,10\";" > DIR "/phy.dot"
+  print "graph phy {\n  rankdir = \"LR\" ;\n  size=\"10,10\";" > \
+    (DIR "/" FILEBASE ".dot")
   
-  print "  \"" Root "\" [style=filled,URL=\"" APPNAME       \
-    "?node=" Root "&amp;actions=edit,add\"];" > DIR "/phy.dot"
+  print "  \"" Root "\" [style=filled,URL=\"" APPNAME   \
+    "?node=" Root "&amp;actions=edit,add&amp;file=" FILEBASE "\"];" > (DIR "/" FILEBASE ".dot")
   for (i in U) {
     if (Nd[i]>1)
-      print "  \"" i "\" [URL=\"" APPNAME                               \
-        "?node=" i "&amp;actions=edit,insert,add\"];" > DIR "/phy.dot"
+      print "  \"" i "\" [URL=\"" APPNAME               \
+        "?node=" i "&amp;actions=edit,insert,add&amp;file=" FILEBASE "\"];" > \
+        (DIR "/" FILEBASE ".dot")
     else
       print "  \"" i "\" [URL=\"" APPNAME                               \
-        "?node=" i "&amp;actions=rm,edit,insert,add\"];" > DIR "/phy.dot"
+        "?node=" i "&amp;actions=rm,edit,insert,add&amp;file=" FILEBASE "\"];" > \
+        (DIR "/" FILEBASE ".dot")
   }
 
   for (i in U)
-    print "  \"" U[i] "\" -- \"" i "\" ;" > DIR "/phy.dot"
+    print "  \"" U[i] "\" -- \"" i "\" ;" > (DIR "/" FILEBASE ".dot")
 
-  print "  { rank=same ;" > DIR "/phy.dot"
+  print "  { rank=same ;" > (DIR "/" FILEBASE ".dot")
   for (i in U)
     if (Tip[i])
-      print "    \"" i "\" ;" > DIR "/phy.dot"
-  print "  }\n}" > DIR "/phy.dot"
-  close(DIR "/phy.dot")
-
-  system("./dot -Tcmapx -o" DIR "/phy.map -Tjpg -o" DIR "/phy.jpg "   \
-         DIR "/phy.dot")
+      print "    \"" i "\" ;" > (DIR "/" FILEBASE ".dot")
+  print "  }\n}" > (DIR "/" FILEBASE ".dot")
+  close(DIR "/" FILEBASE ".dot")
+  
+  system("./dot -Tcmapx -o" (DIR "/" FILEBASE ".map") " -Tjpg -o"   \
+         (DIR "/" FILEBASE ".jpg") " " (DIR "/" FILEBASE ".dot"))
 }
 
 function write_phy () {
   for (i in U)
-    print i, U[i] > DIR "/phy"
+    print i, U[i] > (DIR "/" FILEBASE ".fy")
 }
 
 function error(msg) {
-  print msg > DIR "/error"
+  print msg > (DIR "/error")
   print "Error: " msg > "/dev/stderr" 
   exit 1
 }
