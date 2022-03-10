@@ -174,10 +174,15 @@ function make_jpg() {
   print "graph phy {\n  rankdir = \"LR\" ;\n  size=\"10,10\";" > DIR "/phy.dot"
   
   print "  \"" Root "\" [style=filled,URL=\"" APPNAME       \
-    "?node=" Root "&amp;actions=edit\"];" > DIR "/phy.dot"
-  for (i in U)
-    print "  \"" i "\" [URL=\"" APPNAME                 \
-      "?node=" i "&amp;actions=rm,edit,insert,add\"];" > DIR "/phy.dot"
+    "?node=" Root "&amp;actions=edit,add\"];" > DIR "/phy.dot"
+  for (i in U) {
+    if (Nd[i]>1)
+      print "  \"" i "\" [URL=\"" APPNAME                               \
+        "?node=" i "&amp;actions=edit,insert,add\"];" > DIR "/phy.dot"
+    else
+      print "  \"" i "\" [URL=\"" APPNAME                               \
+        "?node=" i "&amp;actions=rm,edit,insert,add\"];" > DIR "/phy.dot"
+  }
 
   for (i in U)
     print "  \"" U[i] "\" -- \"" i "\" ;" > DIR "/phy.dot"
