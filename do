@@ -90,7 +90,7 @@ function header() {
   print "<style>"
   print "body { font-size: 14px; font-family: " \
     "Verdana, Arial, Helvetica, sans-serif; }"
-  print ".main {width: 1000px; padding-top: 30px; margin-left: auto;"   \
+  print ".main {max-width: 1200px; padding-top: 30px; margin-left: auto;"   \
     "  margin-right: auto; }"
   print "a { color:#15358d; text-decoration:none; border-bottom-style:none }"
   print "a:visited { color:#9f1dbc }"
