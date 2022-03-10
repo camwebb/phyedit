@@ -189,7 +189,7 @@ function make_jpg() {
   print "  }\n}" > DIR "/phy.dot"
   close(DIR "/phy.dot")
 
-  system("dot -Tcmapx -o" DIR "/phy.map -Tjpg -o" DIR "/phy.jpg "   \
+  system("./dot -Tcmapx -o" DIR "/phy.map -Tjpg -o" DIR "/phy.jpg "   \
          DIR "/phy.dot")
 }
 
