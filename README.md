@@ -11,10 +11,10 @@ Dependencies:
 
 ## Phylogeny file format
 
-A pipe-delimited list of child-parent pairs. Order of the children is
-uninformative, but ordering of shared parents is preserved. All node
-names must be unique. No branch lengths or other node-related
-information. E.g., 
+A pipe-delimited list of child-parent pairs. Order of the parents is
+uninformative, but order of children sharing a parent is
+preserved. All node names must be unique. No branch lengths or other
+node-related information. E.g.,
 
 ```
 a|root                    a  y
@@ -27,6 +27,8 @@ x|c                       b  x
 ## phyedit
 
 ``` 
+$ phyedit help
+
  Usage: phyedit [ <action> | help ] [ <node1> [ <node2> ]] 
   Actions 
     <none> : just create image 
@@ -41,6 +43,10 @@ x|c                       b  x
     default = phy.fy ; other files can be supplied via environment 
       variables PHYEDIT_DIR and PHYEDIT_FILEBASE (omit suffix .fy)
 ```
+
+Note: If `dot` (Graphviz) is not in `$PATH`, create a symlink called
+`dot` in the same directory as `phyedit` and edit the code, replacing
+calls to `dot` with `./dot`.
 
 ## do
 

@@ -276,7 +276,7 @@ function make_jpg(   i, j, x) {
   print "  }\n}" > (DIR "/" FILEBASE ".dot")
   close(DIR "/" FILEBASE ".dot")
   
-  system("./dot -Tcmapx -o" (DIR "/" FILEBASE ".map") " -Tjpg -o"   \
+  system("dot -Tcmapx -o" (DIR "/" FILEBASE ".map") " -Tjpg -o"   \
          (DIR "/" FILEBASE ".jpg") " " (DIR "/" FILEBASE ".dot"))
 }
 
