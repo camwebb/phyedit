@@ -14,6 +14,8 @@ BEGIN{
     choose_file()
   else if (f["actions"])
     actions()
+  else if (f["action"] == "newick")
+    newickout()
   else defaultpage()
   
 }
@@ -126,7 +128,9 @@ function defaultpage(   i) {
   print "</td><td style=\"vertical-align: top;\">"
   if (Message)
     print Message "<br/><br/>"
-  print "[ <a href=\"do\">Choose another file</a> ]"
+  print "[ <a href=\"do\">Choose another file</a> ]<br/>"
+  print "[ <a href=\"do?action=newick&file=" f["file"] \
+    "\">Export Newick notation</a> ]<br/>"
   print "</td></tr></table>"
 
   footer()
@@ -200,5 +204,17 @@ function choose_file(   cmd, file) {
   print "<input type=\"submit\" value=\"Use\"/>"
   print "</p></form>"
 
+  footer()
+}
+
+function newickout() {
+  header()
+
+  print "<p>"
+  system("PHYEDIT_DIR=tmp PHYEDIT_FILEBASE=" f["file"]  \
+         " ./phyedit " f["action"] )
+  print "</p>"
+  print "<p>[ <a href=\"do?file=" f["file"] "\">BACK</a> ]</p>"
+  
   footer()
 }
