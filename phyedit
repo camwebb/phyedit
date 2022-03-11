@@ -121,7 +121,7 @@ function spin_node(node  , tmp) {
   test_node_is_in(node)
   
   # test for exactly two daughters
-  if (Nd[node] != 2)
+  if (length(D[node]) != 2)
     error("spinning only possible with a bifurcating node")
 
   # only thing that need to change is the ordering of D
