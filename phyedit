@@ -1,9 +1,15 @@
 #!/usr/bin/gawk -f
 
+# phyedit: simple phylogeny manipulation and viewing with graphviz
+# (c) Cam Webb 2022 <cw@camwebb.info>
+
 BEGIN{
   
   APPNAME ="do"
   DEBUG = 0
+
+  if (ARGV[1] == "help")
+    usage()
   
   load()
   test_args()
@@ -383,4 +389,19 @@ function fy2new(   ) {
   exit 0
 }
   
+function usage() {
+  print "Usage: phyedit [ <action> | help ] [ <node1> [ <node2> ]] \n"  \
+    "  Actions \n"                                                      \
+    "    <none> : just create image \n"                                 \
+    "    add    : add terminal <node2> to <node1> \n"                   \
+    "    insert : add <node2> in parent edge of <node1> \n"             \
+    "    rm     : delete <node1> if terminal or single-daughter-node \n" \
+    "    spin   : rearrange order of daughters for bifurcating <node1> \n" \
+    "    edit   : change node label for <node1> \n"                     \
+    "      (all the above also output updated image of phylo) \n"         \
+    "    newick : output Newick for input fy-format \n"                 \
+    "  Input file\n" \
+    "    default = phy.fy ; other files can be supplied via environment \n"\
+    "      variables PHYEDIT_DIR and PHYEDIT_FILEBASE (omit suffix .fy)"
 
+}
