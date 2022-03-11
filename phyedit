@@ -3,13 +3,16 @@
 BEGIN{
   
   APPNAME ="do"
+  DEBUG = 1
   
   load()
-
   test_args()
 
-  if(DEBUG)
+  if(DEBUG) {
+    print "File: " DIR "/" FILEBASE ".fy"
+    system("cat " DIR "/" FILEBASE ".fy")
     debug("pre-action")
+  }
   
   if ((ARGC == 4) && (ARGV[1] == "add"))
     add_node(ARGV[2], ARGV[3])
@@ -31,29 +34,12 @@ BEGIN{
     debug("final")
 
   write_phy()
-
   
   exit 0
 }
 
-function test_node_is_out(x)  {
-  if (U[x] || (x == Root))
-    error("'" x "' already in tree")
-  
-  # fix index, an entry for U[x] was created during test
-  delete U[x]
-}
 
-function test_node_is_in(x)  {
-  if (!U[x] && (x != Root))
-    error("'" x "' is not in tree")
-
-  # fix index in case the root was used as a test
-  if (x == Root)
-    delete U[Root]
-}
-
-function load(   i) {
+function load(   i, nd) {
 
   FS=OFS="|"
   PROCINFO["sorted_in"] = "@ind_str_asc"
@@ -77,14 +63,14 @@ function load(   i) {
       error("Input tree error: duplicate '" $1 "' in column 1")
     
     U[$1] = $2
-    Nd[$2]++
+    #/ Nd[$2]++
     # daughter order
-    Do[$2][Nd[$2]] = $1
+    Do[$2][++nd[$2]] = $1
   }
   close(DIR "/" FILEBASE ".fy")
 
   # find root
-  for (i in Nd)
+  for (i in Do)
     if (!U[i]) {
       if (!Root)
         Root = i
@@ -94,14 +80,15 @@ function load(   i) {
   # print "Root: " Root
   
   # THIS IS KEY - never realized this before!!
-  delete U[Root]
+  #/ delete U[Root]
+  # NOTE U[Root] now exists but is "" -- no problem
   
-  # find tips
-  for (i in U)
-    if (!Nd[i]) {
-      Tip[i] = 1
-      delete Nd[i]
-    }
+  #/ # find tips
+  #/ for (i in U)
+  #/   if (!Nd[i]) {
+  #/     Tip[i] = 1
+  #/     delete Nd[i]
+  #/   }
   
   # print "Tips: "
   # for (i in U)
@@ -109,14 +96,6 @@ function load(   i) {
   #     print "  " i
 
   system("rm " DIR "/error >& /dev/null")
-}
-
-function test_args() {
-  
-  # test for unitary arguments
-  for (i = 2; i < ARGC; i++)
-    if (split(ARGV[i], tmp, " ") > 1)
-      error("arguments must be single words: '" ARGV[i] "'")
 }
 
 function add_node(node, new) {
@@ -296,7 +275,7 @@ function make_jpg(   i, j, x) {
     "  dpi=\"96\";" > (DIR "/" FILEBASE ".dot")
 
   # Root seperate - not a daughter
-  if (Nd[Root] == 2)
+  if (length(Do[Root]) == 2)
     x = "spin,add,edit"
   else
     x = "add,edit"
@@ -305,11 +284,11 @@ function make_jpg(   i, j, x) {
     (DIR "/" FILEBASE ".dot")
   # all daughters, correctly ordered
   for (i in Do)
-    for (j = 1; j<=Nd[i]; j++) {
+    for (j = 1; j<=length(Do[i]); j++) {
       # tips
-      if (Nd[Do[i][j]] <= 1)
+      if (length(Do[Do[i][j]]) <= 1)
         x = "rm,insert,add,edit"
-      else if (Nd[Do[i][j]] == 2)
+      else if (length(Do[Do[i][j]]) == 2)
         x = "spin,insert,add,edit"
       else 
         x = "insert,add,edit"
@@ -320,11 +299,12 @@ function make_jpg(   i, j, x) {
     }
   
   for (i in U)
-    print "  \"" U[i] "\" -- \"" i "\" ;" > (DIR "/" FILEBASE ".dot")
+    if (i != Root)
+      print "  \"" U[i] "\" -- \"" i "\" ;" > (DIR "/" FILEBASE ".dot")
 
   print "  { rank=same ;" > (DIR "/" FILEBASE ".dot")
-  for (i in U)
-    if (Tip[i])
+  for (i in Do)
+    if (!length(Do[i]))
       print "    \"" i "\" ;" > (DIR "/" FILEBASE ".dot")
   print "  }\n}" > (DIR "/" FILEBASE ".dot")
   close(DIR "/" FILEBASE ".dot")
@@ -335,8 +315,36 @@ function make_jpg(   i, j, x) {
 
 function write_phy () {
   for (i in Do)
-    for (j = 1; j<=Nd[i]; j++)
+    for (j = 1; j<=length(Do[i]); j++)
       print Do[i][j], i > (DIR "/" FILEBASE ".fy")
+}
+
+function test_args() {
+  
+  # test for unitary arguments
+  for (i = 2; i < ARGC; i++)
+    if (split(ARGV[i], tmp, " ") > 1)
+      error("arguments must be single words: '" ARGV[i] "'")
+
+  # TODO: add other tests for allowable node names
+  
+}
+
+function test_node_is_out(x)  {
+  if (U[x] || (x == Root))
+    error("'" x "' already in tree")
+  
+  # fix index, an entry for U[x] was created during test
+  delete U[x]
+}
+
+function test_node_is_in(x)  {
+  if (!U[x] && (x != Root))
+    error("'" x "' is not in tree")
+
+  #/ # fix index in case the root was used as a test
+  #/ if (x == Root)
+  #/   delete U[Root]
 }
 
 function error(msg) {
@@ -347,25 +355,23 @@ function error(msg) {
 
 function debug(msg,     i, j) {
   print " ===================== " msg " =========================== "
-  print "File: " DIR "/" FILEBASE ".fy"
-  system("cat " DIR "/" FILEBASE ".fy")
   
   print "\ni, U[i]"
   for (i in U)
     print i, U[i]
 
-  print "\ni, Nd[i]"
-  for (i in Nd)
-    print i, Nd[i]
+  #/ print "\ni, Nd[i]"
+  #/ for (i in Nd)
+  #/   print i, Nd[i]
 
   print "\ni, j, Do[i][j]"
   for (i in Do)
-    for (j = 1; j <= Nd[i]; j++)
+    for (j = 1; j <= length(Do[i]); j++)
       print i, j, Do[i][j]
 
-  print "\ni, Tip[i]"
-  for (i in Tip)
-    print i, Tip[i]
+  #/ print "\ni, Tip[i]"
+  #/ for (i in Tip)
+  #/   print i, Tip[i]
 
 }
 
