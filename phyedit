@@ -3,7 +3,7 @@
 BEGIN{
   
   APPNAME ="do"
-  DEBUG = 1
+  DEBUG = 0
   
   load()
   test_args()
@@ -44,15 +44,8 @@ function load(   i, nd) {
   FS=OFS="|"
   PROCINFO["sorted_in"] = "@ind_str_asc"
 
-  if(ENVIRON["PHYEDIT_FILEBASE"])
-    FILEBASE = ENVIRON["PHYEDIT_FILEBASE"]
-  else
-    FILEBASE = "phy"
-
-  if(ENVIRON["PHYEDIT_DIR"])
-    DIR = ENVIRON["PHYEDIT_DIR"]
-  else
-    DIR = "."
+  FILEBASE = (ENVIRON["PHYEDIT_FILEBASE"]) ? ENVIRON["PHYEDIT_FILEBASE"] : "phy"
+  DIR = (ENVIRON["PHYEDIT_DIR"]) ? ENVIRON["PHYEDIT_DIR"] : "."
   
   if (system("test -f " DIR "/" FILEBASE ".fy" ))
     error("'" DIR "/" FILEBASE ".fy' is not a file")
@@ -63,38 +56,24 @@ function load(   i, nd) {
       error("Input tree error: duplicate '" $1 "' in column 1")
     
     U[$1] = $2
-    #/ Nd[$2]++
-    # daughter order
     D[$2][++nd[$2]] = $1
   }
   close(DIR "/" FILEBASE ".fy")
 
   # find root
   for (i in D)
-    if (!U[i]) {
+    # note: test creates scalar U[Root]
+    if (!length(U[i])) {
       if (!Root)
         Root = i
       else
         error("Two roots = disconnected trees; '" i "' vs '" Root "'")
     }
-  # print "Root: " Root
   
-  # THIS IS KEY - never realized this before!!
-  #/ delete U[Root]
-  # NOTE U[Root] now exists but is "" -- no problem
+  # Force scalar arrays for tips
+  for (i in U)
+    isarray(D[i])
   
-  #/ # find tips
-  #/ for (i in U)
-  #/   if (!Nd[i]) {
-  #/     Tip[i] = 1
-  #/     delete Nd[i]
-  #/   }
-  
-  # print "Tips: "
-  # for (i in U)
-  #   if (Tip[i])
-  #     print "  " i
-
   system("rm " DIR "/error >& /dev/null")
 }
 
@@ -102,18 +81,21 @@ function add_node(node, new) {
 
   test_node_is_in(node)
   test_node_is_out(new)
-  # U array
+
   U[new] = node
-  # Nd array
-  #/ Nd[U[new]]++
-  # D array - add as last
-  D[node][length(D[node])+1] = new
-  # Tip array
-  #/ Tip[new] = 1
-  # tricky! this fails: it creates Tip[node] to check it, but it's value is ""
-  # if (Tip[node])
-  #   delete Tip[node]
-  #/ delete Tip[node]
+
+  # NOTE: a scalar array cannot be changed directly to a subarray
+  if (!length(D[node])) {
+    delete D[node]
+    D[node][1] = new
+  }
+  else
+    # add as last
+    D[node][length(D[node])+1] = new
+
+  # create a scalar D[new]
+  isarray(D[new])
+  
 }
 
 function spin_node(node  , tmp) {
@@ -139,53 +121,46 @@ function insert_node(node, new,    i) {
   if (node == Root)
     error("Cannot insert at root")
 
-  # U array
   U[new] = U[node]
   U[node] = new
   
-  # Nd array: parent Nd not changed, but self:
-  #/ Nd[new] = 1
-
-  # D array
-  # self
+  # D, self, create
   D[new][1] = node
-  # parent 
+  # D, parent 
   for (i = 1; i <= length(D[U[new]]); i++)
     if (D[U[new]][i] == node)
       D[U[new]][i] = new
 }
 
-function rm_node(node    , i, daughter, parent) {
+function rm_node(node    , i, daughter, parent, newd, j) {
   
   test_node_is_in(node)
 
+  # fail if trying to delete root, or a single daughter edge
+  if ((node == Root) ||                                 \
+      ((U[node] == Root) && (length(D[Root]) == 1)))
+    error("Cannot delete root node or the single daughter of root")
+
   # error if the node has more than one daughters
-  if (Nd[node]>1)
+  if (length(D[node])>1)
     error("node '" node "' has more than one daughter")
 
-  # fail if trying to delete root
-  if ((node == Root) ||                         \
-      ((U[node] == Root) && (Nd[Root] == 1)))
-    error("Cannot delete root node")
-
-  # set convenience variables
-  daughter = D[node][1]
+  # convenience variable
   parent = U[node]
 
   # deleting a single-daughter node
-  if (Nd[node] == 1) {
+  if (length(D[node]) == 1) {
     
-    # U array
+    # convenience variable
+    daughter = D[node][1]
+    
     # find the daughter and give it a new parent
     U[daughter] = U[node]
     # delete self
     delete U[node]
     
-    # Nd array, unchanged for parent, delete for self
-    delete Nd[node]
-
     # D array, adjust parent
-    for (i = 1; i <= Nd[parent]; i++)
+    for (i = 1; i <= length(D[parent]); i++)
       if (D[parent][i] == node)
         D[parent][i] = daughter
     # delete for self
@@ -194,28 +169,21 @@ function rm_node(node    , i, daughter, parent) {
   }
   # else the node is a tip
   else {
-    # U array
+
     delete U[node]
 
     # D array, need to delete and reorder!
-    for (i = 1; i <= Nd[parent]; i++)
+    for (i = 1; i <= length(D[parent]); i++)
       if (D[parent][i] != node) 
         newd[++j] = D[parent][i]
-    for (i = 1; i < Nd[parent]; i++)
+    for (i = 1; i < length(D[parent]); i++)
       D[parent][i] = newd[i]
     # now delete the final index
-    delete D[parent][Nd[parent]]
+    delete D[parent][length(D[parent])]
     
-    # No D for self, since tip
+    # delete self
+    delete D[node]
     
-    # Nd array, parent has one less daughter
-    Nd[parent]--
-    # No Nd for self, since tip, BUT used for testing
-    delete Nd[node]
-    
-    # if the parent had been a single node and is now a term
-    if (!Nd[parent])
-      Tip[parent] = 1
   }
 }
 
@@ -224,48 +192,40 @@ function edit_label(old, new,  i, parent) {
   test_node_is_in(old)
   test_node_is_out(new)
 
+  # convenience
   parent = U[old]
   
   # U array
-  # fix label for daughters
+  # for daughters
   for (i in U) {
     if (U[i] == old)
       U[i] = new
   }
-  # fix label for parent, unless node is root
-  if (old != Root) {
+  # for parent
+  if (old != Root) 
     U[new] = parent
-    delete U[old]
-  }
+  else
+    isarray(U[new])
+  delete U[old]
 
-  # if tip
-  if (Tip[old]) {
-    Tip[new]=1
-    delete Tip[old]
-    
-    # D array for parent
+  # D, for parents (root has no parents)
+  if (old != Root)
     for (i in D[parent])
       if (D[parent][i] == old)
         D[parent][i] = new
-  }
-  else {
-    # D array for self
+
+  # D, for self
+  if (length(D[old])) {
     for (i in D[old])
       D[new][i] = D[old][i]
-    delete D[old]
-
-    # D array for parent
-    for (i in D[parent])
-      if (D[parent][i] == old)
-        D[parent][i] = new
-    
-    #Nd array
-    Nd[new] = Nd[old]
-    delete Nd[old]
-    
-    # Delete this test case index
-    delete Tip[old]
   }
+  else
+    isarray(D[new])
+  
+  delete D[old]
+
+  if (old == Root)
+    Root = new
 }
   
 function make_jpg(   i, j, x) {
@@ -289,10 +249,10 @@ function make_jpg(   i, j, x) {
         x = "rm,insert,add,edit"
       else if (length(D[D[i][j]]) == 2)
         x = "spin,insert,add,edit"
-      else 
+      else
         x = "insert,add,edit"
       
-      print "  \"" D[i][j] "\" [URL=\"" APPNAME "?node=" D[i][j]   \
+      print "  \"" D[i][j] "\" [URL=\"" APPNAME "?node=" D[i][j]     \
         "&amp;actions=" x "&amp;file=" FILEBASE "\"];" >             \
         (DIR "/" FILEBASE ".dot")
     }
@@ -358,16 +318,19 @@ function debug(msg,     i, j) {
   print "\ni, U[i]"
   for (i in U)
     print i, U[i]
-
+  
   #/ print "\ni, Nd[i]"
   #/ for (i in Nd)
   #/   print i, Nd[i]
 
   print "\ni, j, D[i][j]"
-  for (i in D)
-    for (j = 1; j <= length(D[i]); j++)
-      print i, j, D[i][j]
-
+  for (i in D) {
+    if (length(D[i]))
+      for (j in D[i])
+        print i, j, D[i][j]
+    else
+      print i
+  }
   #/ print "\ni, Tip[i]"
   #/ for (i in Tip)
   #/   print i, Tip[i]
