@@ -65,12 +65,12 @@ function load(   i, nd) {
     U[$1] = $2
     #/ Nd[$2]++
     # daughter order
-    Do[$2][++nd[$2]] = $1
+    D[$2][++nd[$2]] = $1
   }
   close(DIR "/" FILEBASE ".fy")
 
   # find root
-  for (i in Do)
+  for (i in D)
     if (!U[i]) {
       if (!Root)
         Root = i
@@ -105,15 +105,15 @@ function add_node(node, new) {
   # U array
   U[new] = node
   # Nd array
-  Nd[U[new]]++
-  # Do array - add as last
-  Do[U[new]][Nd[U[new]]] = new
+  #/ Nd[U[new]]++
+  # D array - add as last
+  D[node][length(D[node])+1] = new
   # Tip array
-  Tip[new] = 1
+  #/ Tip[new] = 1
   # tricky! this fails: it creates Tip[node] to check it, but it's value is ""
   # if (Tip[node])
   #   delete Tip[node]
-  delete Tip[node]
+  #/ delete Tip[node]
 }
 
 function spin_node(node  , tmp) {
@@ -124,10 +124,10 @@ function spin_node(node  , tmp) {
   if (Nd[node] != 2)
     error("spinning only possible with a bifurcating node")
 
-  # only thing that need to change is the ordering of Do
-  tmp = Do[node][1]
-  Do[node][1] = Do[node][2]
-  Do[node][2] = tmp
+  # only thing that need to change is the ordering of D
+  tmp = D[node][1]
+  D[node][1] = D[node][2]
+  D[node][2] = tmp
 
 }
 
@@ -147,13 +147,13 @@ function insert_node(node, new, i) {
   # Nd array: parent Nd not changed, but self:
   Nd[new] = 1
 
-  # Do array
+  # D array
   # self
-  Do[new][1] = node
+  D[new][1] = node
   # parent 
   for (i = 1; i <= Nd[U[new]]; i++)
-    if (Do[U[new]][i] == node)
-      Do[U[new]][i] = new
+    if (D[U[new]][i] == node)
+      D[U[new]][i] = new
 }
 
 function rm_node(node    , i, daughter, parent) {
@@ -170,7 +170,7 @@ function rm_node(node    , i, daughter, parent) {
     error("Cannot delete root node")
 
   # set convenience variables
-  daughter = Do[node][1]
+  daughter = D[node][1]
   parent = U[node]
 
   # deleting a single-daughter node
@@ -185,12 +185,12 @@ function rm_node(node    , i, daughter, parent) {
     # Nd array, unchanged for parent, delete for self
     delete Nd[node]
 
-    # Do array, adjust parent
+    # D array, adjust parent
     for (i = 1; i <= Nd[parent]; i++)
-      if (Do[parent][i] == node)
-        Do[parent][i] = daughter
+      if (D[parent][i] == node)
+        D[parent][i] = daughter
     # delete for self
-    delete Do[node]
+    delete D[node]
     
   }
   # else the node is a tip
@@ -198,16 +198,16 @@ function rm_node(node    , i, daughter, parent) {
     # U array
     delete U[node]
 
-    # Do array, need to delete and reorder!
+    # D array, need to delete and reorder!
     for (i = 1; i <= Nd[parent]; i++)
-      if (Do[parent][i] != node) 
-        newd[++j] = Do[parent][i]
+      if (D[parent][i] != node) 
+        newd[++j] = D[parent][i]
     for (i = 1; i < Nd[parent]; i++)
-      Do[parent][i] = newd[i]
+      D[parent][i] = newd[i]
     # now delete the final index
-    delete Do[parent][Nd[parent]]
+    delete D[parent][Nd[parent]]
     
-    # No Do for self, since tip
+    # No D for self, since tip
     
     # Nd array, parent has one less daughter
     Nd[parent]--
@@ -244,21 +244,21 @@ function edit_label(old, new,  i, parent) {
     Tip[new]=1
     delete Tip[old]
     
-    # Do array for parent
-    for (i in Do[parent])
-      if (Do[parent][i] == old)
-        Do[parent][i] = new
+    # D array for parent
+    for (i in D[parent])
+      if (D[parent][i] == old)
+        D[parent][i] = new
   }
   else {
-    # Do array for self
-    for (i in Do[old])
-      Do[new][i] = Do[old][i]
-    delete Do[old]
+    # D array for self
+    for (i in D[old])
+      D[new][i] = D[old][i]
+    delete D[old]
 
-    # Do array for parent
-    for (i in Do[parent])
-      if (Do[parent][i] == old)
-        Do[parent][i] = new
+    # D array for parent
+    for (i in D[parent])
+      if (D[parent][i] == old)
+        D[parent][i] = new
     
     #Nd array
     Nd[new] = Nd[old]
@@ -275,7 +275,7 @@ function make_jpg(   i, j, x) {
     "  dpi=\"96\";" > (DIR "/" FILEBASE ".dot")
 
   # Root seperate - not a daughter
-  if (length(Do[Root]) == 2)
+  if (length(D[Root]) == 2)
     x = "spin,add,edit"
   else
     x = "add,edit"
@@ -283,17 +283,17 @@ function make_jpg(   i, j, x) {
     "?node=" Root "&amp;actions=" x "&amp;file=" FILEBASE "\"];" >      \
     (DIR "/" FILEBASE ".dot")
   # all daughters, correctly ordered
-  for (i in Do)
-    for (j = 1; j<=length(Do[i]); j++) {
+  for (i in D)
+    for (j = 1; j<=length(D[i]); j++) {
       # tips
-      if (length(Do[Do[i][j]]) <= 1)
+      if (length(D[D[i][j]]) <= 1)
         x = "rm,insert,add,edit"
-      else if (length(Do[Do[i][j]]) == 2)
+      else if (length(D[D[i][j]]) == 2)
         x = "spin,insert,add,edit"
       else 
         x = "insert,add,edit"
       
-      print "  \"" Do[i][j] "\" [URL=\"" APPNAME "?node=" Do[i][j]   \
+      print "  \"" D[i][j] "\" [URL=\"" APPNAME "?node=" D[i][j]   \
         "&amp;actions=" x "&amp;file=" FILEBASE "\"];" >             \
         (DIR "/" FILEBASE ".dot")
     }
@@ -303,8 +303,8 @@ function make_jpg(   i, j, x) {
       print "  \"" U[i] "\" -- \"" i "\" ;" > (DIR "/" FILEBASE ".dot")
 
   print "  { rank=same ;" > (DIR "/" FILEBASE ".dot")
-  for (i in Do)
-    if (!length(Do[i]))
+  for (i in D)
+    if (!length(D[i]))
       print "    \"" i "\" ;" > (DIR "/" FILEBASE ".dot")
   print "  }\n}" > (DIR "/" FILEBASE ".dot")
   close(DIR "/" FILEBASE ".dot")
@@ -314,9 +314,9 @@ function make_jpg(   i, j, x) {
 }
 
 function write_phy () {
-  for (i in Do)
-    for (j = 1; j<=length(Do[i]); j++)
-      print Do[i][j], i > (DIR "/" FILEBASE ".fy")
+  for (i in D)
+    for (j = 1; j<=length(D[i]); j++)
+      print D[i][j], i > (DIR "/" FILEBASE ".fy")
 }
 
 function test_args() {
@@ -364,10 +364,10 @@ function debug(msg,     i, j) {
   #/ for (i in Nd)
   #/   print i, Nd[i]
 
-  print "\ni, j, Do[i][j]"
-  for (i in Do)
-    for (j = 1; j <= length(Do[i]); j++)
-      print i, j, Do[i][j]
+  print "\ni, j, D[i][j]"
+  for (i in D)
+    for (j = 1; j <= length(D[i]); j++)
+      print i, j, D[i][j]
 
   #/ print "\ni, Tip[i]"
   #/ for (i in Tip)
