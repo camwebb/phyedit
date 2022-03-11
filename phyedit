@@ -131,8 +131,7 @@ function spin_node(node  , tmp) {
 
 }
 
-
-function insert_node(node, new, i) {
+function insert_node(node, new,    i) {
 
   test_node_is_in(node)
   test_node_is_out(new)
@@ -145,13 +144,13 @@ function insert_node(node, new, i) {
   U[node] = new
   
   # Nd array: parent Nd not changed, but self:
-  Nd[new] = 1
+  #/ Nd[new] = 1
 
   # D array
   # self
   D[new][1] = node
   # parent 
-  for (i = 1; i <= Nd[U[new]]; i++)
+  for (i = 1; i <= length(D[U[new]]); i++)
     if (D[U[new]][i] == node)
       D[U[new]][i] = new
 }
