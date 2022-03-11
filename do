@@ -10,12 +10,14 @@ BEGIN{
   }
   
   # DETERMINE AND EXECUTE METHOD
-  if (!f["file"])
+  if (f["action"] == "create")
+    create()
+  else if (!f["file"])
     choose_file()
-  else if (f["actions"])
-    actions()
   else if (f["action"] == "newick")
     newickout()
+  else if (f["actions"])
+    actions()
   else defaultpage()
   
 }
@@ -204,6 +206,13 @@ function choose_file(   cmd, file) {
   print "<input type=\"submit\" value=\"Use\"/>"
   print "</p></form>"
 
+  print "<form action=\"do\"><p style=\"margin-top: 50px\">"
+  print "Or... make a new tree. Name of root node:"
+  print "<input type=\"text\" name=\"rootnode\" size=\"30\"/>"
+  print "<input type=\"hidden\" name=\"action\" value=\"create\"/><br/><br/>"
+  print "<input type=\"submit\" value=\"Create\"/>"
+  print "</p></form>"
+
   footer()
 }
 
@@ -216,5 +225,32 @@ function newickout() {
   print "</p>"
   print "<p>[ <a href=\"do?file=" f["file"] "\">BACK</a> ]</p>"
   
+  footer()
+}
+
+function create(   cmd, file) {
+
+  header()
+
+  # get existing files
+  cmd = "find tmp -name '*.fy' | sed -e 's|tmp/||g' -e 's/.fy//g'"
+  while ((cmd | getline)>0)
+    file[$0]++
+  
+  if (length(file) > 10)
+    print "<p>Error: maximum number of files exceeded</p>"
+  else if (f["rootnode"] !~ /^[A-Za-z0-9_-]+$/)
+    print "<p>Error: root name must only consist of these characters: A-Z a-z 0-9 or _ or - </p>"
+  else if (file[f["rootnode"]])
+    print "<p>Error: root name exists</p>"
+  else {
+    if(system("echo 'dummy|" f["rootnode"] "' > tmp/" f["rootnode"] ".fy"))
+      print "<p>Error: could not create file</p>"
+    else
+      print "<p>Success</p>"
+  }
+
+  print "<p>[ <a href=\"do\">BACK</a> ]</p>"
+
   footer()
 }
