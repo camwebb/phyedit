@@ -10,8 +10,10 @@ BEGIN{
   }
   
   # DETERMINE AND EXECUTE METHOD
-  if (f["action"] == "create")
-    create()
+  if (f["action"] == "create1")
+    create1()
+  else if (f["action"] == "create2")
+    create2()
   else if (!f["file"])
     choose_file()
   else if (f["action"] == "newick")
@@ -205,9 +207,19 @@ function choose_file(   cmd, file) {
   print "</p></form>"
 
   print "<form action=\"do\"><p style=\"margin-top: 50px\">"
-  print "Or... make a new tree. Name of root node:"
+  print "Or... make a new two-node tree from a single name of root node " \
+    "(allowed characters are 'A-Za-z0-9_-'):<br/>"
   print "<input type=\"text\" name=\"rootnode\" size=\"30\"/>"
-  print "<input type=\"hidden\" name=\"action\" value=\"create\"/><br/><br/>"
+  print "<input type=\"hidden\" name=\"action\" value=\"create1\"/><br/><br/>"
+  print "<input type=\"submit\" value=\"Create\"/>"
+  print "</p></form>"
+
+  print "<form action=\"do\"><p style=\"margin-top: 50px\">"
+  print "Or... make a new tree from Newick format"          \
+    " phylogeny (allowed characters are '(),;A-Za-z0-9_-]':<br/>"
+  print "<textarea style=\"height:100px;width:300px;\" name=\"newick\">"\
+         "</textarea>"
+  print "<input type=\"hidden\" name=\"action\" value=\"create2\"/><br/><br/>"
   print "<input type=\"submit\" value=\"Create\"/>"
   print "</p></form>"
 
@@ -226,10 +238,10 @@ function newickout() {
   footer()
 }
 
-function create(   cmd, file) {
+function create1(   cmd, file) {
 
   header()
-
+  
   # get existing files
   cmd = "find tmp -name '*.fy' | sed -e 's|tmp/||g' -e 's/.fy//g'"
   while ((cmd | getline)>0)
@@ -243,11 +255,54 @@ function create(   cmd, file) {
     print "<p>Error: root name exists</p>"
   else {
     if(system("echo 'dummy|" f["rootnode"] "' > tmp/" f["rootnode"] ".fy"))
-      print "<p>Error: could not create file</p>"
+      print "<p>Error: could not create new file</p>"
+    else
+      print "<p>Success</p>"
+  }
+  
+  print "<p>[ <a href=\"do\">BACK</a> ]</p>"
+
+  footer()
+}
+
+function create2(   cmd, file, rootname) {
+
+  header()
+  
+  # get existing files
+  cmd = "find tmp -name '*.fy' | sed -e 's|tmp/||g' -e 's/.fy//g'"
+  while ((cmd | getline)>0)
+    file[$0]++
+
+  gsub(/[ \t\r\f\n]/, "", f["newick"])
+  if (length(file) > 10)
+    print "<p>Error: maximum number of files exceeded</p>"
+  else if (f["newick"] !~ /^[(),;A-Za-z0-9_-]+$/)
+    print "<p>Error: Newick must only consist of these characters: "    \
+      "() ; , A-Z a-z 0-9 _ -</p>"
+  else {
+    # find the root name
+    rootname = gensub(/.*\)([A-Za-z0-9_-]+);$/, "\\1","G", f["newick"])
+    if (!rootname)
+      print "<p>Error: could not find root name/p>"
+    else if (file[rootname])
+      print "<p>Error: root name '" rootname "' exists</p>"
+    else if(system("echo '" f["newick"] "' > tmp/_tmp.new"))
+      print "<p>Error: could not create _tmp.fy file</p>"
+    else if (system("PHYEDIT_DIR=tmp PHYEDIT_FILEBASE=_tmp ./phyedit new2fy" \
+                    " > tmp/_tmp.fy")) {
+      print "<p>Error: could not convert _tmp.fy file (1)<br/>Error: "
+      system("cat tmp/error")
+      print "</p>"
+    }
+    else if (system("mv tmp/_tmp.fy tmp/" rootname ".fy"))
+      print "<p>Error: could not convert _tmp.fy file (2)</p>"
     else
       print "<p>Success</p>"
   }
 
+  system("rm tmp/_tmp* &> /dev/null")
+  
   print "<p>[ <a href=\"do\">BACK</a> ]</p>"
 
   footer()

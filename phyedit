@@ -483,7 +483,8 @@ function new2fy() {
   for (i in D)
     for (j = 1; j<=length(D[i]); j++)
       print real[D[i][j]], real[i]
-  
+
+  exit 0
 }
 
 function usage() {
