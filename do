@@ -81,8 +81,6 @@ function action(   error, cmd) {
     getline error < "tmp/error"
     Message = "Error: " error
   }
-  else
-    Message = "Success"
   
 }
 
@@ -130,9 +128,9 @@ function defaultpage(   i) {
   print "</td><td style=\"vertical-align: top;\">"
   if (Message)
     print Message "<br/><br/>"
-  print "[ <a href=\"do\">Choose another file</a> ]<br/>"
+  print "[ <a href=\"do\">Choose another file</a> ]<br/><br/>"
   print "[ <a href=\"do?action=newick&file=" f["file"] \
-    "\">Export Newick notation</a> ]<br/>"
+    "\">Export Newick notation</a> ]"
   print "</td></tr></table>"
 
   footer()

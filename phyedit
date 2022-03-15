@@ -10,8 +10,13 @@ BEGIN{
 
   if (ARGV[1] == "help")
     usage()
+
+  init()
   
-  load()
+  if ((ARGC == 2) && (ARGV[1] == "new2fy"))
+    new2fy()
+  else 
+    load()
   test_args()
 
   if(DEBUG) {
@@ -22,15 +27,15 @@ BEGIN{
   
   if ((ARGC == 4) && (ARGV[1] == "add"))
     add_node(ARGV[2], ARGV[3])
-  if ((ARGC == 4) && (ARGV[1] == "insert"))
+  else if ((ARGC == 4) && (ARGV[1] == "insert"))
     insert_node(ARGV[2], ARGV[3])
-  if ((ARGC == 3) && (ARGV[1] == "spin"))
+  else if ((ARGC == 3) && (ARGV[1] == "spin"))
     spin_node(ARGV[2])
-  if ((ARGC == 3) && (ARGV[1] == "rm"))
+  else if ((ARGC == 3) && (ARGV[1] == "rm"))
     rm_node(ARGV[2])
-  if ((ARGC == 4) && (ARGV[1] == "edit"))
+  else if ((ARGC == 4) && (ARGV[1] == "edit"))
     edit_label(ARGV[2], ARGV[3])
-  if ((ARGC == 2) && (ARGV[1] == "newick"))
+  else if ((ARGC == 2) && (ARGV[1] == "newick"))
     fy2new()
   
   if(DEBUG)
@@ -46,14 +51,15 @@ BEGIN{
   exit 0
 }
 
-
-function load(   i, nd) {
-
+function init() {
   FS=OFS="|"
   PROCINFO["sorted_in"] = "@ind_str_asc"
 
   FILEBASE = (ENVIRON["PHYEDIT_FILEBASE"]) ? ENVIRON["PHYEDIT_FILEBASE"] : "phy"
   DIR = (ENVIRON["PHYEDIT_DIR"]) ? ENVIRON["PHYEDIT_DIR"] : "."
+}
+
+function load(   i, nd) {
   
   if (system("test -f " DIR "/" FILEBASE ".fy" ))
     error("'" DIR "/" FILEBASE ".fy' is not a file")
@@ -389,6 +395,97 @@ function fy2new(   ) {
   exit 0
 }
   
+function new2fy() {
+  
+  if (system("test -f " DIR "/" FILEBASE ".new" ))
+    error("'" DIR "/" FILEBASE ".new' is not a file")
+  
+  RS="\x04"
+  # read from stdin
+  getline newick < ( DIR "/" FILEBASE ".new")
+  # clean and remove ;
+  gsub(/[ \t\n\f]/,"",newick)
+
+  # minimal checks
+  if (newick ~ /[^A-Za-z0-9_(),;-]/)
+    error("illegal character in Newick: [^A-Za-z0-9_(),;-]")
+  if (newick ~ /[^;]$/)
+    error("no ending ; in Newick")
+  
+  Root = "node" ++n
+  at = Root
+  
+  for (i = 1; i <= length(newick); i++) {
+    x = substr(newick, i, 1)
+    
+    if (x == "(") {
+      U["node" ++n] = at
+      # print x "  " at " -> node" n 
+      D[at][length(D[at])+1] = "node" n
+
+      at = "node" n
+      
+      lp++
+    }
+
+    else if (x == ",") {
+      # load node name of previous 'at'
+      if (!tmp)
+        error("terminal or node without a name")
+      else {
+        real[at] = tmp
+        # print "  at = " at ", real = " real[at]
+        tmp = ""
+      }
+        
+      U["node" ++n] = U[at]
+      # print x "  " at " -> node" n 
+      D[U[at]][length(D[U[at]])+1] = "node" n
+
+      at = "node" n
+    }
+
+    else if (x == ")") {
+      # load node name of previous position
+      if (!tmp)
+        error("terminal or node without a name")
+      else {
+        real[at] = tmp
+        # print "  at = " at ", real = " real[at]
+        tmp = ""
+      }
+      
+      # print x "  " at " -> " U[at] 
+      at = U[at]
+      
+      rp++
+    }
+    else if (x ~ /[A-Za-z0-9_-]/) {
+      tmp = x
+      while ((x ~ /[A-Za-z0-9_-]/) && (i <= length(newick))) {
+        x = substr(newick,++i,1)
+        tmp = tmp x
+      }
+      # correct i and tmp
+      i--
+      gsub(/.$/,"",tmp)
+    }
+  }
+
+  # for Root
+  real[at] = tmp
+  # print "  at = " at ", real = " real[at]
+
+  # check parentheses
+  if (lp != rp)
+    error("number of left parentheses != number of right parentheses")
+  
+  for (i in D)
+    for (j = 1; j<=length(D[i]); j++)
+      print real[D[i][j]], real[i]
+  
+}
+
 function usage() {
   print "Usage: phyedit [ <action> | help ] [ <node1> [ <node2> ]] \n"  \
     "  Actions \n"                                                      \
