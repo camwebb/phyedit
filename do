@@ -9,13 +9,17 @@ BEGIN{
     f[qp[1]] = substr(urldecode(qp[2]),1,2000)
   }
   
-  # DETERMINE AND EXECUTE METHOD
+  # APP FLOW
+  # no apriori file...
   if (f["action"] == "create1")
     create1()
   else if (f["action"] == "create2")
     create2()
+  else if (f["action"] == "delete")
+    delete_file()
   else if (!f["file"])
     choose_file()
+  # ... and now file-specific options
   else if (f["action"] == "newick")
     newickout()
   else if (f["actions"])
@@ -195,33 +199,48 @@ function choose_file(   cmd, file) {
   cmd = "find tmp -name '*.fy' | sed -e 's|tmp/||g' -e 's/.fy//g'"
   while ((cmd | getline)>0)
     file[$0]++
-  
-  print "<form action=\"do\"><p>"
-  print "Choose a file to work on: "
+
+  print "<p><b>PHYEDIT web-based phylogeny editor</b><br/>"\
+    "<i>Please download your phylogeny frequently as a Newick file, as a backup</i></p>"
+  print "<form action=\"do\"><p style=\"margin-top: 30px\">"
+  print "<b>1</b>. Choose a file to work on:"
   print "<select name=\"file\" autocomplete=\"off\">"
   print "<option value=\"NULL\" selected=\"selected\"></option>"
   for (i in file)
     print "<option value=\"" i "\">" i "</option>"
-  print "</select><br/><br/>"
+  print "</select>&#160;&#160;"
   print "<input type=\"submit\" value=\"Use\"/>"
   print "</p></form>"
 
-  print "<form action=\"do\"><p style=\"margin-top: 50px\">"
-  print "Or... make a new two-node tree from a single name of root node " \
-    "(allowed characters are 'A-Za-z0-9_-'):<br/>"
-  print "<input type=\"text\" name=\"rootnode\" size=\"30\"/>"
-  print "<input type=\"hidden\" name=\"action\" value=\"create1\"/><br/><br/>"
+  print "<form action=\"do\"><p style=\"margin-top: 30px\">"
+  print "<b>2</b>. Or make a new two-node tree from a single name of root node " \
+    "(allowed characters are 'A-Za-z0-9_-'):<br/><br/>"
+  print "<input type=\"text\" name=\"rootnode\" style=\"width:300px;\"/>"
+  print "<input type=\"hidden\" name=\"action\" value=\"create1\"/>&#160;&#160;"
   print "<input type=\"submit\" value=\"Create\"/>"
   print "</p></form>"
 
-  print "<form action=\"do\"><p style=\"margin-top: 50px\">"
-  print "Or... make a new tree from Newick format"          \
-    " phylogeny (allowed characters are '(),;A-Za-z0-9_-]':<br/>"
-  print "<textarea style=\"height:100px;width:300px;\" name=\"newick\">"\
-         "</textarea>"
-  print "<input type=\"hidden\" name=\"action\" value=\"create2\"/><br/><br/>"
+  print "<form action=\"do\"><p style=\"margin-top: 30px\">"
+  print "<b>3</b>. Or make a new tree from Newick format"                  \
+    " phylogeny (allowed characters are '(),;A-Za-z0-9_-]':<br/><br/>"
+  print "<textarea style=\"height:50px;width:300px;\" name=\"newick\">" \
+    "</textarea>"
+  print "<input type=\"hidden\" name=\"action\" value=\"create2\"/>&#160;&#160;"
   print "<input type=\"submit\" value=\"Create\"/>"
   print "</p></form>"
+  
+  if (length(file)) {
+    print "<form action=\"do\"><p style=\"margin-top: 30px\">"
+    print "<b>4</b>. Or delete a file (CAUTION!): "
+    print "<input type=\"hidden\" name=\"action\" value=\"delete\"/>"
+    print "<select name=\"file\" autocomplete=\"off\">"
+    print "<option value=\"NULL\" selected=\"selected\"></option>"
+    for (i in file)
+      print "<option value=\"" i "\">" i "</option>"
+    print "</select>&#160;&#160;"
+    print "<input type=\"submit\" value=\"Delete\"/>"
+    print "</p></form>"
+  }
 
   footer()
 }
@@ -305,5 +324,29 @@ function create2(   cmd, file, rootname) {
   
   print "<p>[ <a href=\"do\">BACK</a> ]</p>"
 
+  footer()
+}
+
+
+function delete_file(   cmd, file) {
+  
+  header()
+  
+  # get existing files
+  cmd = "find tmp -name '*.fy' | sed -e 's|tmp/||g' -e 's/.fy//g'"
+  while ((cmd | getline)>0)
+    file[$0]++
+  
+  if (!file[f["file"]])
+    print "<p>Error: file '" f["file"] "' does no exist</p>"
+  else {
+    if(system("rm tmp/" f["file"] ".*"))
+      print "<p>Error: could not delete file</p>"
+    else
+      print "<p>Success</p>"
+  }
+  
+  print "<p>[ <a href=\"do\">BACK</a> ]</p>"
+  
   footer()
 }

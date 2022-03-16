@@ -395,7 +395,7 @@ function fy2new(   ) {
   exit 0
 }
   
-function new2fy() {
+function new2fy(  at, newick, i, x, lp, rp, tmp, real) {
   
   if (system("test -f " DIR "/" FILEBASE ".new" ))
     error("'" DIR "/" FILEBASE ".new' is not a file")
@@ -412,8 +412,7 @@ function new2fy() {
   if (newick ~ /[^;]$/)
     error("no ending ; in Newick")
   
-  Root = "node" ++n
-  at = Root
+  at = "node" ++n
   
   for (i = 1; i <= length(newick); i++) {
     x = substr(newick, i, 1)
