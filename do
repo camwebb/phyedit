@@ -136,7 +136,9 @@ function defaultpage(   i) {
     print Message "<br/><br/>"
   print "[ <a href=\"do\">Choose another file</a> ]<br/><br/>"
   print "[ <a href=\"do?action=newick&file=" f["file"] \
-    "\">Export Newick notation</a> ]"
+    "\">Export Newick notation</a> ]<br/><br/>"
+  print "[ <a href=\"do?action=pretty&file=" f["file"] \
+    "\">Prettify tree</a> ]"
   print "</td></tr></table>"
 
   footer()
@@ -222,7 +224,7 @@ function choose_file(   cmd, file) {
 
   print "<form action=\"do\"><p style=\"margin-top: 30px\">"
   print "<b>3</b>. Or make a new tree from Newick format"                  \
-    " phylogeny (allowed characters are '(),;A-Za-z0-9_-]':<br/><br/>"
+    " phylogeny (allowed characters are '(),;A-Za-z0-9_-]'):<br/><br/>"
   print "<textarea style=\"height:50px;width:300px;\" name=\"newick\">" \
     "</textarea>"
   print "<input type=\"hidden\" name=\"action\" value=\"create2\"/>&#160;&#160;"

@@ -40,8 +40,11 @@ BEGIN{
   
   if(DEBUG)
     debug("post-action")
-  
-  make_jpg()
+
+  if ((ARGC == 2) && (ARGV[1] == "pretty"))
+    make_pretty()
+  else
+    make_jpg()
 
   if(DEBUG)
     debug("final")
@@ -245,7 +248,7 @@ function edit_label(old, new,  i, parent) {
 function make_jpg(   i, j, x) {
   
   print "graph phy {\n  rankdir = \"LR\" ;\n  size=\"10,10\";\n" \
-    "  dpi=\"96\";" > (DIR "/" FILEBASE ".dot")
+    "  dpi=\"96\";\n  splines=line;" > (DIR "/" FILEBASE ".dot")
 
   # Root seperate - not a daughter
   if (length(D[Root]) == 2)
@@ -279,6 +282,44 @@ function make_jpg(   i, j, x) {
   for (i in D)
     if (!length(D[i]))
       print "    \"" i "\" ;" > (DIR "/" FILEBASE ".dot")
+  print "  }\n}" > (DIR "/" FILEBASE ".dot")
+  close(DIR "/" FILEBASE ".dot")
+  
+  system("dot -Tcmapx -o" (DIR "/" FILEBASE ".map") " -Tjpg -o"   \
+         (DIR "/" FILEBASE ".jpg") " " (DIR "/" FILEBASE ".dot"))
+}
+
+function make_pretty(   i, j, x, maxl) {
+
+  # aligning the tips is tricky- may need to move to record/html with ports
+  for (i in U)
+    if (length(i) > maxl)
+      maxl = length(i)
+  
+  print "graph phy {\n  rankdir = \"LR\" ;\n  size=\"10,10\";\n" \
+    "  dpi=\"96\";\n  splines=line;\n" > (DIR "/" FILEBASE ".dot")
+  print "  node [fontname=\"Courier-Bold\"];\n" \
+    "  edge [headport=w];" > (DIR "/" FILEBASE ".dot")
+
+  print "  \"" Root "\" [style=filled,URL=\"./#" Root  "\"];" >      \
+    (DIR "/" FILEBASE ".dot")
+  # all daughters, correctly ordered
+  for (i in D)
+    for (j = 1; j<=length(D[i]); j++)
+      print "  \"" D[i][j] "\" [shape=circle,width=0.1,label=\"\",URL=\"./#" D[i][j] \
+        "\"];" >  (DIR "/" FILEBASE ".dot")
+
+
+  for (i in U)
+    if (i != Root)
+      print "  \"" U[i] "\" -- \"" i "\" ;" > (DIR "/" FILEBASE ".dot")
+
+  print "  { rank=same ;" > (DIR "/" FILEBASE ".dot")
+  for (i in D)
+    if (!length(D[i]))
+      print "    \"" i "\" [shape=plain,label=\"" sprintf("%-*s", maxl, i) "\",URL=\"./#" i "\"];" > \
+        (DIR "/" FILEBASE ".dot")
+
   print "  }\n}" > (DIR "/" FILEBASE ".dot")
   close(DIR "/" FILEBASE ".dot")
   
