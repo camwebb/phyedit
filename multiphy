@@ -1,0 +1,19 @@
+#!/bin/sh
+
+mkdir -p _out
+IFS=$'\n'
+for i in `cat $1`
+do
+    echo "$i" > phy.new
+    ROOT=$(sed -E 's/.*\)([^;]+);$/\1/g' phy.new)
+    echo $ROOT
+    ./phyedit new2fy > phy.fy
+    PHYEDIT_FORMAT=pdf phyedit
+    # phyedit
+    gs -q -o _out/$ROOT.pdf -sDEVICE=pdfwrite -g6120x7920 -dPDFFitPage -dUseCropBox phy.pdf
+    # convert phy.jpg -resize 1700x2200 -background white -gravity center -extent 1700x2200 out/$ROOT.jpg
+done
+
+pdftk _out/*.pdf cat output all.pdf
+rm -rf _out
+
